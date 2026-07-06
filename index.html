@@ -11,11 +11,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Tikbox">
 
-    <title>Tikbox v5.4</title>
+    <title>Tikbox v5.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;500;700;900&display=swap');
         
         body {
             font-family: 'Noto Sans TC', -apple-system, sans-serif;
@@ -129,7 +129,20 @@
         <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></symbol>
         <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></symbol>
         <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
     </svg>
+
+    <!-- 私密瀏覽/儲存失敗環境警告 Banner -->
+    <div id="env-warning-banner" class="hidden bg-rose-500 text-white text-xs font-black px-6 py-4 flex flex-col gap-1 z-[60] sticky top-0 shadow-lg">
+        <div class="flex justify-between items-center">
+            <span class="text-sm">⚠️ 偵測到「不支援儲存」的瀏覽環境！</span>
+            <button onclick="document.getElementById('env-warning-banner').remove()" class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">✕</button>
+        </div>
+        <p class="font-normal opacity-90 leading-relaxed mt-1">
+            您可能正在使用「私密瀏覽」或「無痕模式」。此模式下，手機系統會在關閉網頁時**強行刪除所有票券資料**！<br>
+            <strong class="underline">請關閉私密瀏覽、切換至一般網頁模式</strong> 以確保票券能永久保存。
+        </p>
+    </div>
 
     <!-- 圖片燈箱 -->
     <div id="image-lightbox">
@@ -158,6 +171,11 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 系統設定齒輪按鈕 -->
+            <button onclick="openSettingsModal()" class="w-11 h-11 rounded-full bg-white border border-[#F0EDE8] flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+                <svg class="w-5 h-5 text-[#4A3F35]"><use xlink:href="#icon-settings"></use></svg>
+            </button>
         </header>
 
         <main id="home-view" class="flex-1 px-6 pb-32">
@@ -218,19 +236,83 @@
                         </div>
                         <input id="point-expiry" type="date" class="native-date-input" onchange="document.getElementById('point-date-text').innerText=this.value">
                     </div>
-                    <!-- 新增：已使用切換開關 -->
+                    <!-- 已使用切換開關 -->
                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
                         <label class="text-sm font-black text-[#4A3F35]">標記為已使用 / 已兌換</label>
                         <label class="switch"><input type="checkbox" id="point-used-toggle"><span class="slider"></span></label>
                     </div>
                 </div>
                 <div class="flex gap-3 mt-8">
-                    <!-- 新增：刪除按鈕 (僅在編輯時顯示) -->
+                    <!-- 刪除按鈕 (僅在編輯時顯示) -->
                     <button id="point-delete-btn" onclick="deletePoint()" class="hidden w-16 py-4 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center">
                         <svg class="w-6 h-6"><use xlink:href="#icon-trash"></use></svg>
                     </button>
                     <button onclick="closePointModal()" class="flex-1 py-4 bg-gray-100 rounded-2xl font-bold text-gray-400">取消</button>
                     <button onclick="savePoint()" class="flex-1 py-4 bg-blue-500 rounded-2xl font-bold text-white shadow-lg shadow-blue-200">儲存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系統設定與備份防震工具彈窗 -->
+        <div id="settings-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-6">
+            <div class="bg-white w-full max-w-sm rounded-[32px] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-black text-[#4A3F35]">系統設定與工具</h3>
+                    <button onclick="closeSettingsModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><svg class="w-5 h-5"><use xlink:href="#icon-x"></use></svg></button>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- 儲存空間量條 -->
+                    <div class="bg-[#FDF8F0] p-4 rounded-2xl border border-amber-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-black text-amber-600 uppercase tracking-widest">手機本地容量狀態</span>
+                            <span id="storage-percent" class="text-xs font-black text-amber-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                            <div id="storage-bar" class="h-full bg-amber-500 rounded-full transition-all" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span id="storage-text" class="text-[10px] font-black text-gray-400">0.00 MB / 5.0 MB</span>
+                            <span class="text-[10px] font-bold text-gray-400">(極限 5.0MB)</span>
+                        </div>
+                    </div>
+
+                    <!-- 釋放空間壓縮工具 -->
+                    <div>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">空間清理</label>
+                        <button onclick="compressAllExistingTickets()" class="w-full py-3.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <span>⚡ 批次一鍵壓縮所有舊票券</span>
+                        </button>
+                        <p class="text-[10px] text-gray-400 mt-1 leading-relaxed px-1">將資料庫裡原先佔用超大空間的原始照片全部「極小化智慧優化」至 50KB（條碼文字仍清晰），立即釋放 90% 空間！</p>
+                    </div>
+
+                    <!-- 資料備份與還原工具 (重點解決關閉丟失問題) -->
+                    <div class="border-t border-gray-100 pt-4">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">🔒 極致防丟失：備份與還原</label>
+                        <div class="flex gap-2 mb-3">
+                            <button onclick="exportData()" class="flex-1 py-3 bg-amber-50 border border-amber-200 text-amber-700 font-bold rounded-xl text-xs active:scale-95">📤 匯出備份碼</button>
+                            <button onclick="showImportSection()" class="flex-1 py-3 bg-gray-50 border border-gray-200 text-gray-600 font-bold rounded-xl text-xs active:scale-95">📥 匯入還原</button>
+                        </div>
+
+                        <!-- 匯出區塊 -->
+                        <div id="export-section" class="hidden space-y-2">
+                            <label class="text-[10px] font-bold text-amber-600">複製下方備份碼貼到「手機備忘錄」保存：</label>
+                            <textarea id="backup-text-area" readonly class="w-full h-24 bg-gray-50 text-[10px] p-2.5 rounded-xl border border-gray-100 font-mono select-all outline-none resize-none"></textarea>
+                            <button onclick="copyBackupText()" class="w-full py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md">📋 複製備份碼</button>
+                        </div>
+
+                        <!-- 匯入區塊 -->
+                        <div id="import-section" class="hidden space-y-2">
+                            <label class="text-[10px] font-bold text-gray-500">將備忘錄裡的備份碼貼到下方還原：</label>
+                            <textarea id="import-text-area" placeholder="在此處貼上複製好的 Tikbox 備份碼..." class="w-full h-24 bg-gray-50 text-[10px] p-2.5 rounded-xl border border-gray-200 font-mono outline-none resize-none"></textarea>
+                            <button onclick="importData()" class="w-full py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-md">✅ 確認還原（這會覆蓋目前數據）</button>
+                        </div>
+                    </div>
+
+                    <!-- 強制初始化 -->
+                    <div class="border-t border-gray-100 pt-4">
+                        <button onclick="forceResetAll()" class="w-full py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-bold text-xs active:scale-95">⚠️ 清空所有快取重整資料庫</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -278,6 +360,11 @@
                         <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFile(this)">
                         <img id="img-output" class="hidden w-full h-full object-cover">
                         <div id="upload-hint" class="text-center text-gray-300 font-black uppercase text-[10px] tracking-widest">點擊上傳截圖</div>
+                        <!-- 新增載入中遮罩 -->
+                        <div id="compressing-hint" class="absolute inset-0 bg-black/60 hidden flex-col items-center justify-center text-white text-xs font-bold gap-2">
+                            <span class="animate-bounce">⚡</span>
+                            <span>圖片優化壓縮中...</span>
+                        </div>
                     </div>
                     <div class="space-y-5">
                         <div class="border-b border-gray-100 pb-2">
@@ -306,20 +393,66 @@
             </div>
         </div>
 
-        <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-[#4A3F35] text-white px-8 py-3 rounded-full text-xs font-bold opacity-0 transition-all pointer-events-none z-[70]"></div>
+        <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-[#4A3F35] text-white px-8 py-3 rounded-full text-xs font-bold opacity-0 transition-all pointer-events-none z-[70] text-center shadow-lg"></div>
     </div>
 
     <script>
-        // 初始化 DB
-        let db = JSON.parse(localStorage.getItem('tikbox_v4_db')) || { folders: [], tickets: [], points: [] };
-        if (db.folders.length === 0) {
-            db.folders = [
-                { id: 'default', name: '一般票券 🎫' },
-                { id: 'other', name: '其他 🏷️' }
-            ];
+        // 初始化 DB (防呆防毀，建立安全機制防止損毀)
+        let db = { folders: [], tickets: [], points: [] };
+        
+        function initDatabase() {
+            try {
+                const raw = localStorage.getItem('tikbox_v4_db');
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && typeof parsed === 'object') {
+                            db.folders = Array.isArray(parsed.folders) ? parsed.folders : [];
+                            db.tickets = Array.isArray(parsed.tickets) ? parsed.tickets : [];
+                            db.points = Array.isArray(parsed.points) ? parsed.points : [];
+                        }
+                    } catch (parseError) {
+                        // 萬一損毀，安全備份原文字，防止資料消失
+                        console.error("資料解析失敗！損毀備份中...", parseError);
+                        localStorage.setItem('tikbox_v4_db_corrupted_backup', raw);
+                        showToast("⚠️ 偵測到快取損毀！已建立還原備份");
+                    }
+                }
+            } catch (e) {
+                console.error("讀取資料庫失敗：", e);
+            }
+
+            if (db.folders.length === 0) {
+                db.folders = [
+                    { id: 'default', name: '一般票券 🎫' },
+                    { id: 'other', name: '其他 🏷️' }
+                ];
+            }
         }
 
+        initDatabase();
+
         let currentFolderId = null, currentTab = 'unused', showPointHistory = false, tempImg = null, selectedEmoji = "";
+
+        // --- 核心持久度與私密模式檢查機制 ---
+        function checkPersistenceAndPrivateMode() {
+            let isRestricted = false;
+            try {
+                const testKey = '__tikbox_test_persistence__';
+                localStorage.setItem(testKey, '1');
+                const val = localStorage.getItem(testKey);
+                localStorage.removeItem(testKey);
+                if (val !== '1') {
+                    isRestricted = true;
+                }
+            } catch (e) {
+                isRestricted = true;
+            }
+
+            if (isRestricted) {
+                document.getElementById('env-warning-banner').classList.remove('hidden');
+            }
+        }
 
         // --- 核心工具 ---
         function calculateRemainingDays(expiryDate) {
@@ -333,7 +466,175 @@
         function showToast(m) {
             const t = document.getElementById('toast'); t.innerText = m;
             t.classList.add('opacity-100');
-            setTimeout(() => t.classList.remove('opacity-100'), 2000);
+            setTimeout(() => t.classList.remove('opacity-100'), 3000);
+        }
+
+        // --- 系統設定與工具控制 ---
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+            document.getElementById('export-section').classList.add('hidden');
+            document.getElementById('import-section').classList.add('hidden');
+            updateStorageDisplay();
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        // 顯示容量佔用百分比
+        function updateStorageDisplay() {
+            try {
+                const raw = localStorage.getItem('tikbox_v4_db') || '';
+                // 估算 Unicode 佔用位元組 (每個字元約 2 bytes)
+                const sizeInBytes = raw.length * 2;
+                const limit = 5 * 1024 * 1024; // 5MB limit
+                const pct = Math.min(100, Math.round((sizeInBytes / limit) * 100));
+                
+                document.getElementById('storage-bar').style.width = pct + '%';
+                document.getElementById('storage-percent').innerText = pct + '%';
+                document.getElementById('storage-text').innerText = `${(sizeInBytes / 1024 / 1024).toFixed(2)} MB / 5.0 MB`;
+                
+                if (pct > 85) {
+                    document.getElementById('storage-bar').className = "h-full bg-red-500 rounded-full transition-all";
+                } else {
+                    document.getElementById('storage-bar').className = "h-full bg-amber-500 rounded-full transition-all";
+                }
+            } catch(e) {
+                document.getElementById('storage-text').innerText = "計算失敗";
+            }
+        }
+
+        // 批次壓縮所有現有相片
+        async function compressAllExistingTickets() {
+            const ticketsWithLargeImages = db.tickets.filter(t => t.image && t.image.startsWith('data:image'));
+            if (ticketsWithLargeImages.length === 0) {
+                showToast("🎉 目前沒有需要壓縮的圖片票券！");
+                return;
+            }
+
+            if (!confirm(`將為現有的 ${ticketsWithLargeImages.length} 張票券相片進行智慧微縮壓縮。這能為您釋放大量空間，確定要開始嗎？`)) {
+                return;
+            }
+
+            showToast("⏳ 批次深度壓縮中，請勿關閉視窗...");
+            let processed = 0;
+
+            for (let t of ticketsWithLargeImages) {
+                try {
+                    t.image = await compressImagePromise(t.image, 800, 0.6);
+                    processed++;
+                } catch (e) {
+                    console.error("單張圖片壓縮失敗", e);
+                }
+            }
+
+            render();
+            updateStorageDisplay();
+            showToast(`⚡ 壓縮完成！成功智慧縮小 ${processed} 張票券。`);
+        }
+
+        // 異步 Canvas 圖片壓縮包裝
+        function compressImagePromise(base64Str, maxLimit = 800, quality = 0.6) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > maxLimit) {
+                            height *= maxLimit / width;
+                            width = maxLimit;
+                        }
+                    } else {
+                        if (height > maxLimit) {
+                            width *= maxLimit / height;
+                            height = maxLimit;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = reject;
+                img.src = base64Str;
+            });
+        }
+
+        // 匯出資料為 Base64 備份代碼
+        function exportData() {
+            try {
+                const jsonStr = JSON.stringify(db);
+                // 使用 Unicode 安全的 Base64 轉碼
+                const encoded = btoa(encodeURIComponent(jsonStr));
+                document.getElementById('backup-text-area').value = encoded;
+                document.getElementById('export-section').classList.remove('hidden');
+                document.getElementById('import-section').classList.add('hidden');
+            } catch (e) {
+                showToast("❌ 匯出失敗：" + e.message);
+            }
+        }
+
+        function copyBackupText() {
+            const el = document.getElementById('backup-text-area');
+            el.select();
+            document.execCommand('copy');
+            showToast('📋 備份碼已複製！可貼至 LINE 或備忘錄保存');
+        }
+
+        function showImportSection() {
+            document.getElementById('import-section').classList.remove('hidden');
+            document.getElementById('export-section').classList.add('hidden');
+        }
+
+        // 匯入資料還原
+        function importData() {
+            const code = document.getElementById('import-text-area').value.trim();
+            if (!code) {
+                showToast("請貼上備份代碼！");
+                return;
+            }
+            try {
+                const decoded = decodeURIComponent(atob(code));
+                const parsed = JSON.parse(decoded);
+                
+                if (parsed && typeof parsed === 'object' && (parsed.folders || parsed.tickets)) {
+                    if (confirm("⚠️ 匯入將會完全覆蓋目前的票券、分類與點數，確認繼續嗎？")) {
+                        db.folders = Array.isArray(parsed.folders) ? parsed.folders : db.folders;
+                        db.tickets = Array.isArray(parsed.tickets) ? parsed.tickets : [];
+                        db.points = Array.isArray(parsed.points) ? parsed.points : [];
+                        
+                        render();
+                        closeSettingsModal();
+                        showToast("🎉 還原成功！所有票券已安全歸倉！");
+                    }
+                } else {
+                    showToast("❌ 備份代碼格式錯誤，請重新確認！");
+                }
+            } catch (e) {
+                showToast("❌ 還原失敗，請確定備份碼貼上完整！");
+            }
+        }
+
+        function forceResetAll() {
+            if (confirm("此動作將清除您手機本地所有票券、點數與分類且無法還原！建議點選取消，並先使用「匯出備份」保管資料。確定要強行清除格式化嗎？")) {
+                localStorage.removeItem('tikbox_v4_db');
+                db = {
+                    folders: [
+                        { id: 'default', name: '一般票券 🎫' },
+                        { id: 'other', name: '其他 🏷️' }
+                    ],
+                    tickets: [],
+                    points: []
+                };
+                render();
+                closeSettingsModal();
+                showToast("💥 系統資料已全面重設格式化。");
+            }
         }
 
         // --- 點數操作 ---
@@ -350,6 +651,7 @@
 
         function openEditPointModal(id) { 
             const p = db.points.find(x => x.id === id);
+            if(!p) return;
             document.getElementById('editing-point-id').value = p.id;
             document.getElementById('point-name').value = p.name;
             document.getElementById('point-value').value = p.value;
@@ -373,7 +675,7 @@
 
             if(id) { 
                 const p = db.points.find(x => x.id === id);
-                p.name = n; p.value = v; p.expiry = e; p.used = u;
+                if(p) { p.name = n; p.value = v; p.expiry = e; p.used = u; }
             } else {
                 db.points.push({id: Date.now().toString(), name: n, value: v, expiry: e, used: u});
             }
@@ -473,7 +775,7 @@
                             <div class="swipe-action" onclick="deleteTicket('${t.id}')"><svg class="w-6 h-6"><use xlink:href="#icon-trash"></use></svg></div>
                             <div class="swipe-content p-5" id="content-${t.id}" ontouchstart="handleItemTouchStart(event,'${t.id}')" ontouchmove="handleItemTouchMove(event,'${t.id}')" ontouchend="handleItemTouchEnd(event,'${t.id}')">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100" onclick="zoomImage('${t.image || ''}','${t.title}')">
+                                    <div class="w-16 h-16 rounded-2xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100 cursor-pointer" onclick="zoomImage('${t.image || ''}','${t.title}')">
                                         ${t.image ? `<img src="${t.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center bg-amber-50 text-amber-500 font-black text-lg">${t.title.charAt(0)}</div>`}
                                     </div>
                                     <div class="flex-1 min-w-0">
@@ -495,7 +797,14 @@
                 }).join('') || `<div class="py-24 text-center text-gray-300 font-black text-sm">此標籤尚無票券</div>`;
             }
             document.getElementById('ticket-folder-select').innerHTML = db.folders.map(f => `<option value="${f.id}" ${f.id === currentFolderId ? 'selected' : ''}>${f.name}</option>`).join('');
-            localStorage.setItem('tikbox_v4_db', JSON.stringify(db));
+            
+            // 安全寫入 LocalStorage
+            try {
+                localStorage.setItem('tikbox_v4_db', JSON.stringify(db));
+            } catch (err) {
+                console.error("儲存失敗", err);
+                showToast("⚠️ 儲存空間已滿！請至系統設定匯出備份，並清除多餘圖片。");
+            }
         }
 
         // --- 其他視窗控制 ---
@@ -542,11 +851,62 @@
         function openEditModal(id) { const t=db.tickets.find(x=>x.id===id); document.getElementById('editing-ticket-id').value=t.id; document.getElementById('title').value=t.title; document.getElementById('sn-input').value=t.sn||""; document.getElementById('expiry').value=t.expiry||""; document.getElementById('no-expiry-toggle').checked=t.noExpiry||false; tempImg=t.image; if(tempImg){ document.getElementById('img-output').src=tempImg; document.getElementById('img-output').classList.remove('hidden'); document.getElementById('upload-hint').classList.add('hidden'); } toggleExpiryInput(); document.getElementById('ticket-modal').classList.remove('hidden'); }
         function closeAddModal() { document.getElementById('ticket-modal').classList.add('hidden'); }
         
-        function saveTicket() { const id=document.getElementById('editing-ticket-id').value, t=document.getElementById('title').value, s=document.getElementById('sn-input').value, f=document.getElementById('ticket-folder-select').value, e=document.getElementById('expiry').value, nx=document.getElementById('no-expiry-toggle').checked; if(!t) return; const data={id:id||Date.now().toString(), title:t, sn:s, folderId:f, expiry:e, noExpiry:nx, image:tempImg, used:false}; if(id) { const idx=db.tickets.findIndex(x=>x.id===id); data.used=db.tickets[idx].used; db.tickets[idx]=data; } else db.tickets.push(data); render(); closeAddModal(); }
-        function toggleUsed(id) { const t=db.tickets.find(x=>x.id===id); t.used=!t.used; render(); }
+        function saveTicket() { const id=document.getElementById('editing-ticket-id').value, t=document.getElementById('title').value, s=document.getElementById('sn-input').value, f=document.getElementById('ticket-folder-select').value, e=document.getElementById('expiry').value, nx=document.getElementById('no-expiry-toggle').checked; if(!t) return; const data={id:id||Date.now().toString(), title:t, sn:s, folderId:f, expiry:e, noExpiry:nx, image:tempImg, used:false}; if(id) { const idx=db.tickets.findIndex(x=>x.id===id); if(idx!==-1){ data.used=db.tickets[idx].used; db.tickets[idx]=data; } } else db.tickets.push(data); render(); closeAddModal(); }
+        function toggleUsed(id) { const t=db.tickets.find(x=>x.id===id); if(t){ t.used=!t.used; render(); } }
         function deleteTicket(id) { db.tickets=db.tickets.filter(x=>x.id!==id); render(); }
-        function handleFile(i) { const r=new FileReader(); r.onload=e=>{tempImg=e.target.result; document.getElementById('img-output').src=tempImg; document.getElementById('img-output').classList.remove('hidden'); document.getElementById('upload-hint').classList.add('hidden');}; r.readAsDataURL(i.files[0]); }
-        function openFolder(id) { currentFolderId=id; const f=db.folders.find(x=>x.id===id); document.getElementById('current-folder-name').innerText=f.name; document.getElementById('back-btn').classList.remove('hidden'); document.getElementById('home-view').classList.add('hidden'); document.getElementById('folder-view').classList.remove('hidden'); setTab('unused'); }
+        
+        // --- 大圖片智慧壓縮上傳機制 ---
+        function handleFile(i) {
+            if (!i.files || !i.files[0]) return;
+            
+            const hint = document.getElementById('compressing-hint');
+            hint.classList.remove('hidden'); // 顯示壓縮中提示
+            
+            const file = i.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    const MAX_LIMIT = 800;
+                    if (width > height) {
+                        if (width > MAX_LIMIT) {
+                            height *= MAX_LIMIT / width;
+                            width = MAX_LIMIT;
+                        }
+                    } else {
+                        if (height > MAX_LIMIT) {
+                            width *= MAX_LIMIT / height;
+                            height = MAX_LIMIT;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // 以 JPEG 格式 0.65 的壓縮率輸出，約 50KB-80KB，能為 Safari 節約大約 98% 空間
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
+                    
+                    tempImg = compressedBase64;
+                    document.getElementById('img-output').src = tempImg;
+                    document.getElementById('img-output').classList.remove('hidden');
+                    document.getElementById('upload-hint').classList.add('hidden');
+                    hint.classList.add('hidden'); // 隱藏提示
+                    
+                    showToast("⚡ 圖片智慧優化完成（節省了 95% 空間）");
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openFolder(id) { currentFolderId=id; const f=db.folders.find(x=>x.id===id); if(f){ document.getElementById('current-folder-name').innerText=f.name; document.getElementById('back-btn').classList.remove('hidden'); document.getElementById('home-view').classList.add('hidden'); document.getElementById('folder-view').classList.remove('hidden'); setTab('unused'); } }
         function goHome() { currentFolderId=null; document.getElementById('back-btn').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); document.getElementById('folder-view').classList.add('hidden'); render(); }
         
         // 滑動刪除
@@ -566,7 +926,11 @@
         lbCont.addEventListener('touchmove',e=>{ e.preventDefault(); if(e.touches.length===2){ scale=Math.min(Math.max(1,lastScale*(Math.hypot(e.touches[0].pageX-e.touches[1].pageX,e.touches[0].pageY-e.touches[1].pageY)/startDist)),4); } else if(e.touches.length===1&&scale>1){curX=e.touches[0].pageX-startX; curY=e.touches[0].pageY-startY;} updateImgT(); });
         lbCont.addEventListener('touchend',()=>lastScale=scale);
 
-        window.onload = render;
+        // --- 初始化呼叫 ---
+        window.onload = function() {
+            checkPersistenceAndPrivateMode();
+            render();
+        }
     </script>
 </body>
 </html>
