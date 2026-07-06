@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Tikbox">
 
-    <title>Tikbox v6.1</title>
+    <title>Tikbox v6.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -290,12 +290,22 @@
                             <span class="text-xs font-black text-emerald-700 uppercase tracking-widest">不限容量免費雲端儲存</span>
                         </div>
                         <p class="text-[11px] text-emerald-600/90 leading-relaxed mb-3">
-                            本網頁目前已啟動**雙通道存檔技術**：新票券會自動、即時同步上傳至雲端空間，不再受制於瀏覽器的 5MB 空間限制！
+                            本網頁目前已啟動**雙通道存檔技術**：設定雲端後，新票券會自動、即時同步上傳，不再受制於瀏覽器的 5MB 空間限制！
                         </p>
                         <div class="text-[10px] font-mono text-emerald-700 bg-emerald-100/60 p-2 rounded-xl select-all break-all">
                             <strong>雲端同步識別碼 (您的 UID)：</strong><br>
                             <span id="user-uid-display">正在連線中...</span>
                         </div>
+                    </div>
+
+                    <!-- 自訂 Firebase 雲端連接 (解決自建託管無雲端問題) -->
+                    <div class="border-t border-gray-100 pt-4">
+                        <label class="text-[10px] font-black text-blue-600 uppercase tracking-widest block mb-1">☁️ 自訂專屬 Firebase 雲端金鑰</label>
+                        <p class="text-[10px] text-gray-400 mb-2 leading-relaxed">
+                            如果您在個人 GitHub Pages 自行託管，可在此貼上您免費申請的 Firebase Web 設定 JSON，即可解開 5MB 限制並無縫同步。
+                        </p>
+                        <textarea id="user-firebase-config-input" placeholder='{\n  "apiKey": "...",\n  "authDomain": "...",\n  "projectId": "...",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}' class="w-full h-24 bg-gray-50 text-[10px] p-2.5 rounded-xl border border-gray-200 font-mono outline-none resize-none"></textarea>
+                        <button onclick="saveUserFirebaseConfig()" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-md mt-1 active:scale-95 transition-all">💾 儲存並連接專屬雲端</button>
                     </div>
 
                     <!-- 釋放空間壓縮工具 -->
@@ -420,22 +430,27 @@
     <!-- Firebase 模組載入 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase 安全防毀初始化 ---
+        // --- Firebase 安全防毀與自訂初始化機制 ---
         let app, auth, db, appId;
         let firebaseReady = false;
         let currentUser = null;
 
-        const firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        // 優先讀取平台注入的金鑰，若無則讀取使用者在 Local 貼上的自訂金鑰
+        let firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        if (!firebaseConfigRaw) {
+            firebaseConfigRaw = localStorage.getItem('tikbox_user_firebase_config');
+        }
+
         if (firebaseConfigRaw) {
             try {
-                const firebaseConfig = JSON.parse(firebaseConfigRaw);
+                const firebaseConfig = typeof firebaseConfigRaw === 'string' ? JSON.parse(firebaseConfigRaw) : firebaseConfigRaw;
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'user-custom-app';
                 firebaseReady = true;
             } catch (err) {
                 console.error("Firebase 初始化失敗：", err);
@@ -510,11 +525,29 @@
             setTimeout(() => t.classList.remove('opacity-100'), 3000);
         }
 
-        // --- 雲端備份儲存安全存寫機制 (Rule 1 & Rule 3) ---
+        // --- 儲存 Firebase 金鑰的自訂函式 ---
+        function saveUserFirebaseConfig() {
+            const input = document.getElementById('user-firebase-config-input').value.trim();
+            if (!input) {
+                localStorage.removeItem('tikbox_user_firebase_config');
+                showToast("已清除自訂金鑰，重設為本地模式。");
+                setTimeout(() => window.location.reload(), 1500);
+                return;
+            }
+            try {
+                JSON.parse(input); // 驗證 JSON 語法
+                localStorage.setItem('tikbox_user_firebase_config', input);
+                showToast("🎉 設定儲存成功！正在重新整理連線...");
+                setTimeout(() => window.location.reload(), 1500);
+            } catch (e) {
+                showToast("❌ JSON 格式錯誤！請重新確認貼上的內容。");
+            }
+        }
+
+        // --- 雲端備份儲存安全存寫機制 ---
         async function saveDocToCloud(collectionName, docId, data) {
             if (!firebaseReady || !currentUser) return;
             try {
-                // Rule 1 Strict Path: /artifacts/{appId}/users/{userId}/{collectionName}/{docId}
                 const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
                 await setDoc(docRef, data);
             } catch (err) {
@@ -532,18 +565,18 @@
             }
         }
 
-        // --- Firebase 登入與同步 (Rule 3) ---
+        // --- Firebase 登入與同步 ---
         async function setupCloudSync() {
             if (!firebaseReady) {
                 document.getElementById('cloud-status-indicator').innerHTML = `
                     <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
                     <span>離線模式 (5MB限制)</span>
                 `;
+                document.getElementById('user-uid-display').innerText = "未啟用雲端 (僅使用本地儲存)";
                 return;
             }
 
             try {
-                // 優先使用自定義 Token
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -551,6 +584,11 @@
                 }
             } catch (err) {
                 console.error("雲端驗證失敗：", err);
+                document.getElementById('cloud-status-indicator').innerHTML = `
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                    <span>雲端連線失敗 (金鑰失效)</span>
+                `;
+                document.getElementById('user-uid-display').innerText = "金鑰連接失敗";
                 return;
             }
 
@@ -559,7 +597,6 @@
                     currentUser = user;
                     document.getElementById('user-uid-display').innerText = user.uid;
                     
-                    // 變更指示燈為成功狀態
                     const indicator = document.getElementById('cloud-status-indicator');
                     indicator.className = "flex items-center gap-1 bg-emerald-50 text-[10px] text-emerald-600 font-bold px-1.5 py-0.5 rounded-full animate-none";
                     indicator.innerHTML = `
@@ -567,7 +604,6 @@
                         <span>雲端同步已啟用</span>
                     `;
 
-                    // 從雲端抓取並合併（安全機制）
                     await syncDatabaseFromCloud();
                 }
             });
@@ -577,7 +613,6 @@
         async function syncDatabaseFromCloud() {
             if (!currentUser) return;
             try {
-                // Rule 2 & 3: 簡單抓取
                 const foldersCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'folders');
                 const ticketsCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tickets');
                 const pointsCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'points');
@@ -595,14 +630,12 @@
                 let cloudPoints = [];
                 pointsSnap.forEach(doc => cloudPoints.push(doc.data()));
 
-                // 如果雲端完全沒資料，代表新帳號，將本地同步至雲端
                 if (cloudFolders.length === 0 && cloudTickets.length === 0 && cloudPoints.length === 0) {
                     showToast("☁️ 正在初始化您的雲端備份空間...");
                     for (let f of localDb.folders) await saveDocToCloud('folders', f.id, f);
                     for (let t of localDb.tickets) await saveDocToCloud('tickets', t.id, t);
                     for (let p of localDb.points) await saveDocToCloud('points', p.id, p);
                 } else {
-                    // 若雲端已有資料，以雲端為準更新本地（確保跨裝置同步與不丟失）
                     localDb.folders = cloudFolders.length ? cloudFolders : localDb.folders;
                     localDb.tickets = cloudTickets;
                     localDb.points = cloudPoints;
@@ -663,7 +696,6 @@
                 localDb.points.push(pointData);
             }
             
-            // 同步寫入雲端
             if (pointData) {
                 await saveDocToCloud('points', pointData.id, pointData);
             }
@@ -845,7 +877,6 @@
         async function deleteFolder(id) { 
             const confirmed = await showCustomConfirm('確定要刪除分類夾嗎？', '刪除後，該分類下的所有票券與圖片也將一併刪除且無法復原。');
             if (confirmed) { 
-                // 異步刪除雲端
                 const ticketsToDelete = localDb.tickets.filter(x => x.folderId === id);
                 for (let t of ticketsToDelete) {
                     await deleteDocFromCloud('tickets', t.id);
@@ -917,8 +948,7 @@
             });
         }
 
-        // --- 核心新增：補齊所有缺失的 UI 視窗控制與操作函數 ---
-        
+        // --- 視窗控制與設定管理函式 ---
         function openSettingsModal() {
             document.getElementById('settings-modal').classList.remove('hidden');
             document.getElementById('export-section').classList.add('hidden');
@@ -1088,7 +1118,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // 以 JPEG 格式 0.6 的壓縮率輸出，約 40KB-60KB，為系統儲存空間極小化優化
                     const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
                     
                     tempImg = compressedBase64;
@@ -1146,7 +1175,6 @@
                         localDb.tickets = Array.isArray(parsed.tickets) ? parsed.tickets : [];
                         localDb.points = Array.isArray(parsed.points) ? parsed.points : [];
                         
-                        // 同步所有匯入的資料到雲端
                         if (currentUser) {
                             showToast("☁️ 正在將還原資料同步更新至雲端...");
                             for (let f of localDb.folders) await saveDocToCloud('folders', f.id, f);
@@ -1169,7 +1197,6 @@
         async function forceResetAll() {
             const confirmed = await showCustomConfirm("⚠️ 清空所有資料", "此動作將徹底清空本地與雲端所有票券，且無法還原！建議先使用「匯出備份」妥善保管。確定格式化嗎？");
             if (confirmed) {
-                // 刪除雲端
                 if (currentUser) {
                     for (let f of localDb.folders) await deleteDocFromCloud('folders', f.id);
                     for (let t of localDb.tickets) await deleteDocFromCloud('tickets', t.id);
@@ -1191,7 +1218,7 @@
             }
         }
 
-        // --- 視窗綁定（因使用 type="module"，需要將函數綁定至 window 以利 HTML 調用） ---
+        // --- 視窗綁定（將 type="module" 的函式綁定到全域 window） ---
         window.goHome = goHome;
         window.openFolder = openFolder;
         window.openFolderModal = openFolderModal;
@@ -1209,6 +1236,7 @@
         
         window.openSettingsModal = openSettingsModal;
         window.closeSettingsModal = closeSettingsModal;
+        window.saveUserFirebaseConfig = saveUserFirebaseConfig;
         window.compressAllExistingTickets = compressAllExistingTickets;
         window.exportData = exportData;
         window.copyBackupText = copyBackupText;
@@ -1257,6 +1285,16 @@
 
         // --- 初始化啟動 ---
         window.addEventListener('DOMContentLoaded', () => {
+            // 自動帶入已儲存的自訂 Firebase 金鑰（若有的話）
+            const savedConfig = localStorage.getItem('tikbox_user_firebase_config');
+            if (savedConfig) {
+                document.getElementById('user-firebase-config-input').value = savedConfig;
+            }
+            // 如果是在平台預覽環境，鎖定並標示已啟用
+            if (typeof __firebase_config !== 'undefined') {
+                document.getElementById('user-firebase-config-input').disabled = true;
+                document.getElementById('user-firebase-config-input').placeholder = "已自動啟用平台整合的免費測試雲端。";
+            }
             render();
             setupCloudSync();
         });
