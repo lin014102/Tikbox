@@ -6,12 +6,12 @@
     
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/qkzkqg4j4b-ship-it/Tikbox/refs/heads/main/IMG_8203.jpeg">
     <meta name="mobile-web-app-capable" content="yes">
-    <link class="w-12 h-12 rounded-full border-2 border-amber-500 p-0.5 object-cover" rel="icon" sizes="192x192" href="https://raw.githubusercontent.com/qkzkqg4j4b-ship-it/Tikbox/refs/heads/main/IMG_8203.jpeg">
+    <link rel="icon" sizes="192x192" href="https://raw.githubusercontent.com/qkzkqg4j4b-ship-it/Tikbox/refs/heads/main/IMG_8203.jpeg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Tikbox">
 
-    <title>Tikbox v6.2</title>
+    <title>Tikbox v6.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -290,22 +290,23 @@
                             <span class="text-xs font-black text-emerald-700 uppercase tracking-widest">不限容量免費雲端儲存</span>
                         </div>
                         <p class="text-[11px] text-emerald-600/90 leading-relaxed mb-3">
-                            本網頁目前已啟動**雙通道存檔技術**：設定雲端後，新票券會自動、即時同步上傳，不再受制於瀏覽器的 5MB 空間限制！
+                            本網頁目前已啟動**雙通道存檔技術**：新票券會自動、即時同步上傳至雲端空間，不再受制於瀏覽器的 5MB 空間限制！
                         </p>
                         <div class="text-[10px] font-mono text-emerald-700 bg-emerald-100/60 p-2 rounded-xl select-all break-all">
                             <strong>雲端同步識別碼 (您的 UID)：</strong><br>
-                            <span id="user-uid-display">正在連線中...</span>
+                            <span id="user-uid-display">離線模式 (僅本地)</span>
                         </div>
                     </div>
 
-                    <!-- 自訂 Firebase 雲端連接 (解決自建託管無雲端問題) -->
-                    <div class="border-t border-gray-100 pt-4">
-                        <label class="text-[10px] font-black text-blue-600 uppercase tracking-widest block mb-1">☁️ 自訂專屬 Firebase 雲端金鑰</label>
-                        <p class="text-[10px] text-gray-400 mb-2 leading-relaxed">
-                            如果您在個人 GitHub Pages 自行託管，可在此貼上您免費申請的 Firebase Web 設定 JSON，即可解開 5MB 限制並無縫同步。
+                    <!-- 雲端自訂金鑰綁定區塊 -->
+                    <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/70">
+                        <label class="text-[10px] font-black text-amber-600 uppercase tracking-widest block mb-1">☁️ 自訂專屬 Firebase 雲端金鑰</label>
+                        <p class="text-[10px] text-gray-400 mb-3 leading-relaxed">
+                            請在下方直接貼上您的 Firebase Web SDK 配置碼（支援 JS 物件或 JSON 格式）：
                         </p>
-                        <textarea id="user-firebase-config-input" placeholder='{\n  "apiKey": "...",\n  "authDomain": "...",\n  "projectId": "...",\n  "storageBucket": "...",\n  "messagingSenderId": "...",\n  "appId": "..."\n}' class="w-full h-24 bg-gray-50 text-[10px] p-2.5 rounded-xl border border-gray-200 font-mono outline-none resize-none"></textarea>
-                        <button onclick="saveUserFirebaseConfig()" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-md mt-1 active:scale-95 transition-all">💾 儲存並連接專屬雲端</button>
+                        <textarea id="firebase-config-input" placeholder='{ apiKey: "...", authDomain: "..." }' class="w-full h-32 bg-white text-[10px] p-2.5 rounded-xl border border-gray-200 font-mono outline-none resize-none focus:border-amber-400 transition-colors"></textarea>
+                        <button onclick="saveCustomFirebaseConfig()" class="w-full py-2.5 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md mt-2 active:scale-95 transition-transform">💾 儲存並連接專屬雲端</button>
+                        <button onclick="clearCustomFirebaseConfig()" id="clear-firebase-btn" class="hidden w-full py-2 bg-rose-50 text-rose-500 rounded-xl font-bold text-xs mt-1.5">❌ 斷開專屬雲端連線</button>
                     </div>
 
                     <!-- 釋放空間壓縮工具 -->
@@ -335,7 +336,7 @@
                         <!-- 匯入區塊 -->
                         <div id="import-section" class="hidden space-y-2">
                             <label class="text-[10px] font-bold text-gray-500">將備忘錄裡的備份碼貼到下方還原：</label>
-                            <textarea id="import-text-area" placeholder="在此處貼上複製好的 Tikbox 備份碼..." class="w-full h-24 bg-gray-50 text-[10px] p-2.5 rounded-xl border border-gray-100 font-mono outline-none resize-none"></textarea>
+                            <textarea id="import-text-area" placeholder="在此處貼上複製好的 Tikbox 備份碼..." class="w-full h-24 bg-gray-50 text-[10px] p-2.5 rounded-xl border border-gray-200 font-mono outline-none resize-none"></textarea>
                             <button onclick="importData()" class="w-full py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-md">✅ 確認還原（這會覆蓋目前數據）</button>
                         </div>
                     </div>
@@ -391,7 +392,7 @@
                         <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFile(this)">
                         <img id="img-output" class="hidden w-full h-full object-cover">
                         <div id="upload-hint" class="text-center text-gray-300 font-black uppercase text-[10px] tracking-widest">點擊上傳截圖</div>
-                        <!-- 新增載入中遮罩 -->
+                        <!-- 載入中遮罩 -->
                         <div id="compressing-hint" class="absolute inset-0 bg-black/60 hidden flex-col items-center justify-center text-white text-xs font-bold gap-2">
                             <span class="animate-bounce">⚡</span>
                             <span>圖片優化壓縮中...</span>
@@ -430,27 +431,53 @@
     <!-- Firebase 模組載入 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase 安全防毀與自訂初始化機制 ---
-        let app, auth, db, appId;
+        // --- Firebase 安全防毀與自訂金鑰解析初始化 ---
+        let app, auth, dbInstance, appId;
         let firebaseReady = false;
         let currentUser = null;
 
-        // 優先讀取平台注入的金鑰，若無則讀取使用者在 Local 貼上的自訂金鑰
-        let firebaseConfigRaw = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-        if (!firebaseConfigRaw) {
-            firebaseConfigRaw = localStorage.getItem('tikbox_user_firebase_config');
+        // 彈性解析器：相容 JS Object 語法與 JSON 格式，自動補上鍵值雙引號
+        function parseFlexibleJSON(str) {
+            let s = str.trim();
+            if (s.endsWith(';')) s = s.slice(0, -1);
+            // 移除變數聲明（例如 const config = 或 let config = 或 var config = 等）
+            s = s.replace(/^(const|let|var|window\.)?\s*[a-zA-Z0-9_$]+\s*=\s*/, '');
+            // 將沒有雙引號的鍵值補上雙引號
+            s = s.replace(/([{,]\s*)([a-zA-Z0-9_$]+)\s*:/g, '$1"$2":');
+            // 將單引號字串轉為雙引號
+            s = s.replace(/:\s*'([^']*)'/g, ':"$1"');
+            return JSON.parse(s);
         }
 
-        if (firebaseConfigRaw) {
+        // 讀取是否有手動設置的金鑰，若無則降級為 LocalStorage 模式
+        let activeConfig = null;
+        const customConfigRaw = localStorage.getItem('tikbox_firebase_config_custom');
+        if (customConfigRaw) {
             try {
-                const firebaseConfig = typeof firebaseConfigRaw === 'string' ? JSON.parse(firebaseConfigRaw) : firebaseConfigRaw;
-                app = initializeApp(firebaseConfig);
+                activeConfig = JSON.parse(customConfigRaw);
+                document.getElementById('firebase-config-input').value = customConfigRaw;
+                document.getElementById('clear-firebase-btn').classList.remove('hidden');
+            } catch (e) {
+                console.error("解析自訂雲端金鑰出錯", e);
+            }
+        }
+
+        // 若無自訂則採用系統注入之預設金鑰 (Canvas 環境測試用)
+        if (!activeConfig && typeof __firebase_config !== 'undefined' && __firebase_config) {
+            try {
+                activeConfig = JSON.parse(__firebase_config);
+            } catch (e) {}
+        }
+
+        if (activeConfig && activeConfig.apiKey) {
+            try {
+                app = initializeApp(activeConfig);
                 auth = getAuth(app);
-                db = getFirestore(app);
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'user-custom-app';
+                dbInstance = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 firebaseReady = true;
             } catch (err) {
                 console.error("Firebase 初始化失敗：", err);
@@ -525,30 +552,11 @@
             setTimeout(() => t.classList.remove('opacity-100'), 3000);
         }
 
-        // --- 儲存 Firebase 金鑰的自訂函式 ---
-        function saveUserFirebaseConfig() {
-            const input = document.getElementById('user-firebase-config-input').value.trim();
-            if (!input) {
-                localStorage.removeItem('tikbox_user_firebase_config');
-                showToast("已清除自訂金鑰，重設為本地模式。");
-                setTimeout(() => window.location.reload(), 1500);
-                return;
-            }
-            try {
-                JSON.parse(input); // 驗證 JSON 語法
-                localStorage.setItem('tikbox_user_firebase_config', input);
-                showToast("🎉 設定儲存成功！正在重新整理連線...");
-                setTimeout(() => window.location.reload(), 1500);
-            } catch (e) {
-                showToast("❌ JSON 格式錯誤！請重新確認貼上的內容。");
-            }
-        }
-
         // --- 雲端備份儲存安全存寫機制 ---
         async function saveDocToCloud(collectionName, docId, data) {
             if (!firebaseReady || !currentUser) return;
             try {
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
+                const docRef = doc(dbInstance, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
                 await setDoc(docRef, data);
             } catch (err) {
                 console.error(`雲端備份 [${collectionName}] 失敗`, err);
@@ -558,11 +566,39 @@
         async function deleteDocFromCloud(collectionName, docId) {
             if (!firebaseReady || !currentUser) return;
             try {
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
+                const docRef = doc(dbInstance, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
                 await deleteDoc(docRef);
             } catch (err) {
                 console.error(`雲端刪除 [${collectionName}] 失敗`, err);
             }
+        }
+
+        // --- 自訂雲端儲存與清除設定 ---
+        function saveCustomFirebaseConfig() {
+            const raw = document.getElementById('firebase-config-input').value.trim();
+            if (!raw) {
+                showToast("請輸入或貼上配置資訊！");
+                return;
+            }
+            try {
+                const parsed = parseFlexibleJSON(raw);
+                if (parsed && parsed.apiKey) {
+                    localStorage.setItem('tikbox_firebase_config_custom', JSON.stringify(parsed));
+                    showToast("🎉 雲端金鑰儲存成功！正在重新連接網頁...");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast("❌ 配置格式不完整，找不到 apiKey！");
+                }
+            } catch (err) {
+                showToast("❌ 解析失敗：格式不正確，請檢查代碼完整性。");
+                console.error(err);
+            }
+        }
+
+        function clearCustomFirebaseConfig() {
+            localStorage.removeItem('tikbox_firebase_config_custom');
+            showToast("已斷開自建雲端連線，網頁重新整理中...");
+            setTimeout(() => location.reload(), 1500);
         }
 
         // --- Firebase 登入與同步 ---
@@ -584,11 +620,6 @@
                 }
             } catch (err) {
                 console.error("雲端驗證失敗：", err);
-                document.getElementById('cloud-status-indicator').innerHTML = `
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
-                    <span>雲端連線失敗 (金鑰失效)</span>
-                `;
-                document.getElementById('user-uid-display').innerText = "金鑰連接失敗";
                 return;
             }
 
@@ -609,13 +640,12 @@
             });
         }
 
-        // 全面同步資料庫
         async function syncDatabaseFromCloud() {
             if (!currentUser) return;
             try {
-                const foldersCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'folders');
-                const ticketsCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tickets');
-                const pointsCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'points');
+                const foldersCol = collection(dbInstance, 'artifacts', appId, 'users', currentUser.uid, 'folders');
+                const ticketsCol = collection(dbInstance, 'artifacts', appId, 'users', currentUser.uid, 'tickets');
+                const pointsCol = collection(dbInstance, 'artifacts', appId, 'users', currentUser.uid, 'points');
 
                 const [foldersSnap, ticketsSnap, pointsSnap] = await Promise.all([
                     getDocs(foldersCol),
@@ -823,7 +853,6 @@
             }
             document.getElementById('ticket-folder-select').innerHTML = localDb.folders.map(f => `<option value="${f.id}" ${f.id === currentFolderId ? 'selected' : ''}>${f.name}</option>`).join('');
             
-            // 安全寫入 LocalStorage 快取
             try {
                 localStorage.setItem('tikbox_v4_db', JSON.stringify(localDb));
             } catch (err) {
@@ -889,7 +918,7 @@
             } 
         }
 
-        // --- 批次壓縮所有現有相片 ---
+        // --- 釋放空間與智慧縮圖工具 ---
         async function compressAllExistingTickets() {
             const ticketsWithLargeImages = localDb.tickets.filter(t => t.image && t.image.startsWith('data:image'));
             if (ticketsWithLargeImages.length === 0) {
@@ -948,7 +977,7 @@
             });
         }
 
-        // --- 視窗控制與設定管理函式 ---
+        // --- UI 控制與視窗綁定組件 ---
         function openSettingsModal() {
             document.getElementById('settings-modal').classList.remove('hidden');
             document.getElementById('export-section').classList.add('hidden');
@@ -1218,7 +1247,7 @@
             }
         }
 
-        // --- 視窗綁定（將 type="module" 的函式綁定到全域 window） ---
+        // --- 模組函數向全域 window 綁定 ---
         window.goHome = goHome;
         window.openFolder = openFolder;
         window.openFolderModal = openFolderModal;
@@ -1236,7 +1265,6 @@
         
         window.openSettingsModal = openSettingsModal;
         window.closeSettingsModal = closeSettingsModal;
-        window.saveUserFirebaseConfig = saveUserFirebaseConfig;
         window.compressAllExistingTickets = compressAllExistingTickets;
         window.exportData = exportData;
         window.copyBackupText = copyBackupText;
@@ -1254,12 +1282,13 @@
         window.copySN = copySN;
         window.toggleExpiryInput = toggleExpiryInput;
         window.handleFile = handleFile;
+        window.saveCustomFirebaseConfig = saveCustomFirebaseConfig;
+        window.clearCustomFirebaseConfig = clearCustomFirebaseConfig;
 
-        // --- 觸控與導航 ---
+        // --- 導航與滑動控制 ---
         function openFolder(id) { currentFolderId=id; const f=localDb.folders.find(x=>x.id===id); if(f){ document.getElementById('current-folder-name').innerText=f.name; document.getElementById('back-btn').classList.remove('hidden'); document.getElementById('home-view').classList.add('hidden'); document.getElementById('folder-view').classList.remove('hidden'); setTab('unused'); } }
         function goHome() { currentFolderId=null; document.getElementById('back-btn').classList.add('hidden'); document.getElementById('home-view').classList.remove('hidden'); document.getElementById('folder-view').classList.add('hidden'); render(); }
         
-        // 滑動刪除
         let itemStartX=0;
         function handleItemTouchStart(e,id){itemStartX=e.touches[0].clientX;}
         function handleItemTouchMove(e,id){let x=e.touches[0].clientX-itemStartX; if(x<-100)x=-100; if(x>0)x=0; document.getElementById(`content-${id}`).style.transform=`translateX(${x}px)`;}
@@ -1283,18 +1312,8 @@
         window.zoomImage = zoomImage;
         window.closeLightbox = closeLightbox;
 
-        // --- 初始化啟動 ---
+        // --- 啟動與載入 ---
         window.addEventListener('DOMContentLoaded', () => {
-            // 自動帶入已儲存的自訂 Firebase 金鑰（若有的話）
-            const savedConfig = localStorage.getItem('tikbox_user_firebase_config');
-            if (savedConfig) {
-                document.getElementById('user-firebase-config-input').value = savedConfig;
-            }
-            // 如果是在平台預覽環境，鎖定並標示已啟用
-            if (typeof __firebase_config !== 'undefined') {
-                document.getElementById('user-firebase-config-input').disabled = true;
-                document.getElementById('user-firebase-config-input').placeholder = "已自動啟用平台整合的免費測試雲端。";
-            }
             render();
             setupCloudSync();
         });
